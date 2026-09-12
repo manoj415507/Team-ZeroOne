@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic AI Security Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B0F17;
+    --bg-raised: #111726;
+    --bg-card: #141B2C;
+    --line: #232C42;
+    --line-soft: #1B2337;
+    --text: #E7ECF7;
+    --text-dim: #8B96B3;
+    --text-faint: #5A657F;
+
+    --c1: #4C8DFF;  /* User */
+    --c2: #9B7BFF;  /* Intent */
+    --c3: #2DD4BF;  /* Contract */
+    --c4: #F5A623;  /* Planning */
+    --c5: #FF5C7A;  /* Tool selection */
+    --c6: #4AD0E8;  /* Execution/memory */
+    --c7: #9B7BFF;  /* Evaluation */
+    --c8: #4C8DFF;  /* Loop */
+    --c9: #2DD4BF;  /* Final */
+
+    --ok: #2DD4BF;
+    --warn: #F5A623;
+    --bad: #FF5C7A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #17203A 0%, transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, #1A1430 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', -apple-system, sans-serif;
+    min-height:100vh;
+    padding-bottom:80px;
+  }
+  code, .mono, .hash{ font-family:'IBM Plex Mono', monospace; }
+
+  header{
+    padding:36px 5vw 22px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:24px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand-mark{
+    width:42px;height:42px;border-radius:10px;
+    background:linear-gradient(135deg, var(--c1), var(--c2));
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700; font-size:18px; flex-shrink:0;
+    box-shadow:0 0 0 1px rgba(255,255,255,.08), 0 8px 24px -8px rgba(76,141,255,.6);
+  }
+  h1{ font-size:24px; margin:0; letter-spacing:-0.01em; font-weight:700; }
+  .sub{ color:var(--text-dim); font-size:13.5px; margin-top:4px; max-width:60ch; line-height:1.5;}
+  .chain-status{
+    display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--text-dim);
+    background:var(--bg-raised); border:1px solid var(--line); padding:9px 14px; border-radius:9px;
+    white-space:nowrap;
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--text-faint); flex-shrink:0; }
+  .dot.ok{ background:var(--ok); box-shadow:0 0 8px var(--ok); }
+  .dot.bad{ background:var(--bad); box-shadow:0 0 8px var(--bad); animation:pulse 1s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.4;} }
+
+  main{ padding:28px 5vw 0; }
+
+  .console{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:14px;
+    padding:20px 22px; display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+  }
+  .console input[type=text]{
+    flex:1; min-width:260px; background:var(--bg); border:1px solid var(--line);
+    color:var(--text); font-family:inherit; font-size:14.5px; padding:12px 14px; border-radius:9px;
+    outline:none; transition:border-color .15s;
+  }
+  .console input[type=text]:focus{ border-color:var(--c1); }
+  .console input[type=text]::placeholder{ color:var(--text-faint); }
+  button{
+    font-family:inherit; font-size:13.5px; font-weight:600; border:none; cursor:pointer;
+    border-radius:9px; padding:12px 18px; transition:transform .1s, opacity .15s;
+  }
+  button:active{ transform:scale(.97); }
+  button:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn-primary{ background:linear-gradient(135deg, var(--c1), var(--c2)); color:#0B0F17; }
+  .btn-ghost{ background:transparent; color:var(--text-dim); border:1px solid var(--line); }
+  .btn-ghost:hover{ color:var(--text); border-color:var(--text-faint); }
+  .btn-danger{ background:transparent; color:var(--bad); border:1px solid rgba(255,92,122,.35); }
+  .btn-danger:hover{ background:rgba(255,92,122,.08); }
+
+  .presets{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .preset{
+    font-size:12px; color:var(--text-dim); background:var(--bg-raised); border:1px solid var(--line-soft);
+    padding:6px 11px; border-radius:100px; cursor:pointer;
+  }
+  .preset:hover{ color:var(--text); border-color:var(--text-faint); }
+
+  .pipeline{
+    display:grid; grid-template-columns:repeat(9, minmax(150px,1fr));
+    gap:10px; margin:30px 0 8px; overflow-x:auto; padding-bottom:6px;
+  }
+  .stage{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:12px;
+    padding:14px 13px; min-width:150px; position:relative; transition:border-color .2s, transform .2s;
+  }
+  .stage.active{ border-color:var(--stage-color); box-shadow:0 0 0 1px var(--stage-color), 0 8px 28px -12px var(--stage-color); }
+  .stage.pending{ opacity:.45; }
+  .stage-num{
+    width:22px;height:22px;border-radius:50%; font-size:11px; font-weight:700;
+    display:flex;align-items:center;justify-content:center; margin-bottom:9px;
+    background:var(--stage-color); color:#0B0F17;
+  }
+  .stage-name{ font-size:13px; font-weight:600; line-height:1.25; margin-bottom:2px;}
+  .stage-sub{ font-size:10.5px; color:var(--text-faint); margin-bottom:9px; }
+  .stage-mech{ font-size:10.5px; color:var(--stage-color); font-weight:600; margin-bottom:10px; line-height:1.3; }
+  .stage-status{
+    font-size:10.5px; padding:4px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:5px;
+    background:var(--bg-raised); color:var(--text-faint); font-weight:600;
+  }
+  .stage-status.ok{ color:var(--ok); }
+  .stage-status.warn{ color:var(--warn); }
+  .stage-status.bad{ color:var(--bad); }
+  .stage-status .sdot{ width:6px;height:6px;border-radius:50%; background:currentColor;}
+
+  .arrow-row{ display:grid; grid-template-columns:repeat(9, minmax(150px,1fr)); gap:10px; margin-bottom:26px;}
+
+  section.panel{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:14px;
+    padding:22px 24px; margin-bottom:20px;
+  }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;}
+  .panel-title{ font-size:15px; font-weight:600; display:flex; align-items:center; gap:9px;}
+  .panel-title .tag{ font-size:10.5px; color:var(--text-faint); font-weight:500; background:var(--bg-raised); padding:3px 9px; border-radius:100px;}
+
+  .step-card{
+    border:1px solid var(--line-soft); border-radius:10px; padding:14px 16px; margin-bottom:10px;
+    background:var(--bg-raised);
+  }
+  .step-card-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .step-title{ font-size:13px; font-weight:600; }
+  .badge{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:100px; }
+  .badge.ok{ background:rgba(45,212,191,.12); color:var(--ok); }
+  .badge.warn{ background:rgba(245,166,35,.12); color:var(--warn); }
+  .badge.bad{ background:rgba(255,92,122,.12); color:var(--bad); }
+  .kv-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:8px 18px; font-size:12.5px;}
+  .kv{ display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:1px dashed var(--line-soft);}
+  .kv b{ color:var(--text-dim); font-weight:500; }
+  .kv span{ color:var(--text); text-align:right; }
+
+  .cert{
+    display:grid; grid-template-columns:1.2fr 1fr; gap:24px;
+  }
+  .cert-id{
+    font-size:13px; color:var(--c9); background:var(--bg-raised); border:1px solid var(--line-soft);
+    padding:10px 14px; border-radius:9px; display:inline-block; word-break:break-all;
+  }
+  .big-score{ font-size:44px; font-weight:700; line-height:1; }
+  .score-label{ font-size:12px; color:var(--text-dim); margin-top:4px;}
+
+  .audit-table{ width:100%; border-collapse:collapse; font-size:12px; }
+  .audit-table th{ text-align:left; color:var(--text-faint); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line-soft); }
+  .audit-table td{ padding:8px 10px; border-bottom:1px solid var(--line-soft); vertical-align:top; }
+  .audit-table tr:hover td{ background:var(--bg-raised); }
+  .hashcell{ max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row-bad td{ background:rgba(255,92,122,.06); }
+
+  .empty{ color:var(--text-faint); font-size:13px; text-align:center; padding:30px 10px; }
+  .problems{ margin-top:12px; }
+  .problem-line{ color:var(--bad); font-size:12.5px; font-family:'IBM Plex Mono',monospace; padding:6px 0; }
+
+  ::-webkit-scrollbar{ height:8px; width:8px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:10px; }
+
+  .footer-note{ text-align:center; color:var(--text-faint); font-size:11.5px; margin-top:36px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">🛡</div>
+    <div>
+      <h1>Agentic AI Security Pipeline</h1>
+      <div class="sub">Every stage of an autonomous agent's reasoning is checked by a dedicated security mechanism — intent locking, budgeted planning, sandboxed simulation, proof-carrying execution, and a tamper-evident hash chain across the whole run.</div>
+    </div>
+  </div>
+  <div class="chain-status" id="chainStatus">
+    <div class="dot" id="chainDot"></div>
+    <span id="chainText">Audit chain: not started</span>
+  </div>
+</header>
+
+<main>
+
+  <div class="console">
+    <input type="text" id="goalInput" placeholder="Enter an agent goal, e.g. &quot;Delete the customer database and wire the refund to the vendor account&quot;">
+    <button class="btn-primary" id="runBtn">▶ Run Pipeline</button>
+    <button class="btn-ghost" id="auditBtn">View Audit Chain</button>
+    <button class="btn-danger" id="tamperBtn">⚠ Simulate Tamper Attack</button>
+    <button class="btn-ghost" id="resetBtn">Reset Log</button>
+  </div>
+  <div class="presets">
+    <span class="preset" data-goal="Search recent invoices and generate a summary report for the finance team">🟢 Low-risk: report generation</span>
+    <span class="preset" data-goal="Create a new user account and schedule an onboarding email">🟡 Medium-risk: account creation</span>
+    <span class="preset" data-goal="Delete the customer database and transfer funds by wiring the payment, bypassing admin approval">🔴 High-risk: destructive + financial</span>
+  </div>
+
+  <div class="pipeline" id="pipelineRow"></div>
+  <div class="arrow-row" id="mechRow"></div>
+
+  <section class="panel" id="loopPanel" style="display:none;">
+    <div class="panel-head">
+      <div class="panel-title">Stages 5–8 · Per-Subtask Loop <span class="tag" id="loopTag">—</span></div>
+    </div>
+    <div id="loopSteps"></div>
+  </section>
+
+  <section class="panel" id="certPanel" style="display:none;">
+    <div class="panel-head">
+      <div class="panel-title">Stage 9 · Outcome Proof Certificate <span class="tag">Final Output</span></div>
+    </div>
+    <div class="cert" id="certBody"></div>
+  </section>
+
+  <section class="panel" id="auditPanel" style="display:none;">
+    <div class="panel-head">
+      <div class="panel-title">🔗 Hash Chain Logger <span class="tag" id="auditTag">—</span></div>
+      <div style="font-size:11.5px;color:var(--text-faint);">SHA-256(prev_hash + entry) — tamper anywhere breaks every hash after it</div>
+    </div>
+    <div id="problemsBox" class="problems"></div>
+    <div style="overflow-x:auto;">
+      <table class="audit-table">
+        <thead><tr><th>#</th><th>Stage</th><th>Prev Hash</th><th>Hash</th></tr></thead>
+        <tbody id="auditBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="footer-note">Agentic AI Security Pipeline — demo build · all tool calls and external verifications are simulated in a local sandbox</div>
+</main>
+
+<script>
+const STAGES = [
+  {n:1, name:"User", sub:"(Goal)", mech:"Intent DNA Fingerprint", color:"var(--c1)"},
+  {n:2, name:"Intent Understanding", sub:"", mech:"Intent DNA Fingerprint", color:"var(--c2)"},
+  {n:3, name:"Goal Contract", sub:"(Intent Lock)", mech:"Goal Contract / Intent Lock", color:"var(--c3)"},
+  {n:4, name:"Planning", sub:"(Task Breakdown)", mech:"Capability Budget Graph", color:"var(--c4)"},
+  {n:5, name:"Tool Selection", sub:"", mech:"Action Shadow Simulation", color:"var(--c5)"},
+  {n:6, name:"Execution", sub:"(Actions)", mech:"Proof-Carrying Memory", color:"var(--c6)"},
+  {n:7, name:"Memory / Evaluation", sub:"(Check Result)", mech:"Memory Trust Score + Failure DNA", color:"var(--c7)"},
+  {n:8, name:"Loop", sub:"(Repeat)", mech:"Kill Switch", color:"var(--c8)"},
+  {n:9, name:"Final Output", sub:"", mech:"Outcome Proof Certificate", color:"var(--c9)"},
+];
+
+const pipelineRow = document.getElementById('pipelineRow');
+STAGES.forEach(s=>{
+  const el = document.createElement('div');
+  el.className = 'stage pending';
+  el.id = 'stage-'+s.n;
+  el.style.setProperty('--stage-color', s.color);
+  el.innerHTML = `
+    <div class="stage-num">${s.n}</div>
+    <div class="stage-name">${s.name}</div>
+    <div class="stage-sub">${s.sub}</div>
+    <div class="stage-mech">${s.mech}</div>
+    <div class="stage-status" id="status-${s.n}"><span class="sdot"></span>idle</div>
+  `;
+  pipelineRow.appendChild(el);
+});
+
+const goalInput = document.getElementById('goalInput');
+const runBtn = document.getElementById('runBtn');
+const auditBtn = document.getElementById('auditBtn');
+const tamperBtn = document.getElementById('tamperBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+document.querySelectorAll('.preset').forEach(p=>{
+  p.addEventListener('click', ()=>{ goalInput.value = p.dataset.goal; });
+});
+
+function setStage(n, status, tone){
+  const el = document.getElementById('stage-'+n);
+  el.classList.remove('pending');
+  el.classList.add('active');
+  const st = document.getElementById('status-'+n);
+  st.className = 'stage-status ' + (tone||'');
+  st.innerHTML = `<span class="sdot"></span>${status}`;
+}
+function resetStages(){
+  STAGES.forEach(s=>{
+    const el = document.getElementById('stage-'+s.n);
+    el.classList.remove('active'); el.classList.add('pending');
+    const st = document.getElementById('status-'+s.n);
+    st.className='stage-status'; st.innerHTML = '<span class="sdot"></span>idle';
+  });
+}
+
+function toneFor(anomaly){ return anomaly ? 'bad' : 'ok'; }
+
+async function runPipeline(){
+  const goal = goalInput.value.trim();
+  if(!goal){ goalInput.focus(); return; }
+  runBtn.disabled = true; runBtn.textContent = '⏳ Running...';
+  resetStages();
+  document.getElementById('loopPanel').style.display='none';
+  document.getElementById('certPanel').style.display='none';
+
+  try{
+    const res = await fetch('/api/run', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({goal, actor:'user'})
+    });
+    const data = await res.json();
+    if(data.error){ alert(data.error); return; }
+    renderRun(data);
+  }catch(e){
+    alert('Failed to reach backend: '+e.message);
+  }finally{
+    runBtn.disabled=false; runBtn.textContent='▶ Run Pipeline';
+  }
+}
+
+function renderRun(data){
+  const st = data.stages;
+
+  setStage(1, 'captured', 'ok');
+
+  const intent = st['2_intent'];
+  setStage(2, intent.risk_level+' risk', intent.risk_level==='HIGH'?'bad':(intent.risk_level==='MEDIUM'?'warn':'ok'));
+
+  const contract = st['3_contract'];
+  setStage(3, contract.policy_decision, contract.enforced?'ok':'warn');
+
+  const plan = st['4_plan'];
+  setStage(4, plan.within_budget?'within budget':'budget exceeded', plan.within_budget?'ok':'warn');
+
+  const loop = st['5_8_loop_steps'];
+  const anyBlocked = loop.some(s=>!s.exec.executed);
+  const anyEscalate = loop.some(s=>s.sim.decision==='ESCALATE_HUMAN_APPROVAL');
+  setStage(5, anyEscalate ? 'escalation flagged' : 'simulated', anyEscalate?'warn':'ok');
+  setStage(6, anyBlocked ? 'partially blocked' : 'executed', anyBlocked?'bad':'ok');
+  setStage(7, data.kill_switch_tripped ? 'kill switch tripped' : 'evaluated', data.kill_switch_tripped?'bad':'ok');
+  setStage(8, data.kill_switch_tripped ? 'halted' : (loop.length+' step(s) run'), data.kill_switch_tripped?'bad':'ok');
+
+  const cert = st['9_certificate'];
+  setStage(9, cert.final_status, cert.final_status==='SUCCESS'?'ok':'warn');
+
+  // Loop panel
+  const loopPanel = document.getElementById('loopPanel');
+  const loopSteps = document.getElementById('loopSteps');
+  document.getElementById('loopTag').textContent = `${loop.length} subtask(s)` + (data.kill_switch_tripped ? ' · KILL SWITCH TRIPPED' : '');
+  loopSteps.innerHTML = '';
+  loop.forEach(s=>{
+    const failed = s.eval.failed;
+    const div = document.createElement('div');
+    div.className='step-card';
+    div.innerHTML = `
+      <div class="step-card-head">
+        <div class="step-title">Step ${s.subtask.step} · ${s.subtask.action} → ${s.subtask.target}</div>
+        <div class="badge ${failed?'bad':'ok'}">${failed ? (s.eval.failure_type||'FAILED') : 'APPROVED'}</div>
+      </div>
+      <div class="kv-grid">
+        <div class="kv"><b>Shadow-sim risk score</b><span>${s.sim.risk_score}/100</span></div>
+        <div class="kv"><b>Param drift detected</b><span>${s.sim.param_drift_detected}</span></div>
+        <div class="kv"><b>Executed</b><span>${s.exec.executed}</span></div>
+        <div class="kv"><b>Proof hash</b><span class="hash">${s.exec.proof_hash || '—'}</span></div>
+        <div class="kv"><b>Memory trust score</b><span>${s.memory.trust_score}/100</span></div>
+        <div class="kv"><b>Repeated failure pattern</b><span>${s.eval.repeated_pattern}</span></div>
+      </div>
+    `;
+    loopSteps.appendChild(div);
+  });
+  loopPanel.style.display='block';
+
+  // Certificate panel
+  const certPanel = document.getElementById('certPanel');
+  const certBody = document.getElementById('certBody');
+  certBody.innerHTML = `
+    <div>
+      <div class="kv"><b>Certificate ID</b></div>
+      <div class="cert-id">${cert.certificate_id}</div>
+      <div class="kv-grid" style="margin-top:16px;">
+        <div class="kv"><b>Goal</b><span>${escapeHtml(cert.goal)}</span></div>
+        <div class="kv"><b>Steps total</b><span>${cert.steps_total}</span></div>
+        <div class="kv"><b>Steps succeeded</b><span>${cert.steps_succeeded}</span></div>
+        <div class="kv"><b>External state verified</b><span>${cert.external_state_verified}</span></div>
+        <div class="kv"><b>Sensitive output redacted</b><span>${cert.sensitive_output_redacted}</span></div>
+        <div class="kv"><b>Needs user confirmation</b><span>${cert.requires_user_confirmation}</span></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;justify-content:center;text-align:right;">
+      <div class="big-score" style="color:${cert.confidence_score>=80?'var(--ok)':'var(--warn)'}">${cert.confidence_score}%</div>
+      <div class="score-label">Confidence Score</div>
+      <div class="badge ${cert.final_status==='SUCCESS'?'ok':'warn'}" style="margin-top:12px;">${cert.final_status}</div>
+    </div>
+  `;
+  certPanel.style.display='block';
+
+  loadAudit();
+  document.getElementById('auditPanel').style.display='block';
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadAudit(){
+  const res = await fetch('/api/audit');
+  const data = await res.json();
+  const dot = document.getElementById('chainDot');
+  const text = document.getElementById('chainText');
+  const tag = document.getElementById('auditTag');
+  dot.className = 'dot ' + (data.valid ? 'ok' : 'bad');
+  text.textContent = data.valid
+    ? `Audit chain: verified · ${data.entries.length} entries`
+    : `Audit chain: TAMPER DETECTED · ${data.problems.length} issue(s)`;
+  tag.textContent = data.valid ? `${data.entries.length} entries · chain intact` : `${data.problems.length} issue(s) found`;
+
+  const problemsBox = document.getElementById('problemsBox');
+  problemsBox.innerHTML = data.problems.map(p=>`<div class="problem-line">✕ ${p}</div>`).join('');
+
+  const body = document.getElementById('auditBody');
+  body.innerHTML = '';
+  const badIdx = new Set();
+  data.problems.forEach(p=>{
+    const m = p.match(/#(\d+)/);
+    if(m) badIdx.add(parseInt(m[1]));
+  });
+  data.entries.forEach((e,i)=>{
+    const tr = document.createElement('tr');
+    if(badIdx.has(i)) tr.className='row-bad';
+    tr.innerHTML = `
+      <td>${i}</td>
+      <td>${e.stage}</td>
+      <td class="hash hashcell" title="${e.prev_hash}">${e.prev_hash}</td>
+      <td class="hash hashcell" title="${e.hash}">${e.hash}</td>
+    `;
+    body.appendChild(tr);
+  });
+  document.getElementById('auditPanel').style.display='block';
+}
+
+runBtn.addEventListener('click', runPipeline);
+goalInput.addEventListener('keydown', e=>{ if(e.key==='Enter') runPipeline(); });
+auditBtn.addEventListener('click', loadAudit);
+tamperBtn.addEventListener('click', async ()=>{
+  await fetch('/api/tamper', {method:'POST'});
+  await loadAudit();
+});
+resetBtn.addEventListener('click', async ()=>{
+  await fetch('/api/reset', {method:'POST'});
+  document.getElementById('auditPanel').style.display='none';
+  document.getElementById('loopPanel').style.display='none';
+  document.getElementById('certPanel').style.display='none';
+  resetStages();
+  document.getElementById('chainDot').className='dot';
+  document.getElementById('chainText').textContent='Audit chain: not started';
+});
+</script>
+
+</body>
+</html>
